@@ -27,6 +27,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     return parser
 
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
 
@@ -70,6 +71,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"{name}: {status}")
 
     return 0 if summary["status"] == "PASS" else 1
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

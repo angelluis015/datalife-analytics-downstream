@@ -1,11 +1,7 @@
 import math
 
 
-def compare_metric(
-    baseline_metric: float,
-    current_metric: float,
-    tolerance: float
-) -> bool:
+def compare_metric(baseline_metric: float, current_metric: float, tolerance: float) -> bool:
     for value in (baseline_metric, current_metric, tolerance):
         if isinstance(value, bool) or not isinstance(value, (int, float)):
             raise ValueError("Metric comparison requires numeric inputs")
@@ -19,11 +15,7 @@ def compare_metric(
     return abs(current_metric - baseline_metric) <= tolerance
 
 
-def compare_reports(
-    baseline_report: dict,
-    current_report: dict,
-    tolerances: dict
-) -> dict:
+def compare_reports(baseline_report: dict, current_report: dict, tolerances: dict) -> dict:
     lineage_fields = ["contract", "contract_version", "generator_seed"]
 
     if any(key in lineage_fields for key in tolerances):
@@ -74,7 +66,4 @@ def compare_reports(
         except KeyError:
             checks[key] = "MISSING"
             overall_result = "FAIL"
-    return {
-        "status": overall_result,
-        "checks": checks
-    }
+    return {"status": overall_result, "checks": checks}

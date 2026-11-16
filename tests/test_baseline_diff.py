@@ -19,6 +19,7 @@ def make_report(accuracy: float = 0.80) -> dict:
         },
     }
 
+
 def test_identical_reports_pass():
     baseline = make_report()
     current = make_report()
@@ -42,6 +43,7 @@ def test_metric_exceeding_tolerance_fails():
     assert result["status"] == "FAIL"
     assert result["checks"]["accuracy"] == "FAIL"
 
+
 def test_missing_metric_fails():
     baseline = make_report()
     current = make_report()
@@ -54,6 +56,7 @@ def test_missing_metric_fails():
 
     assert result["status"] == "FAIL"
     assert result["checks"]["accuracy"] == "MISSING"
+
 
 def test_contract_version_mismatch_fails():
     baseline = make_report()
