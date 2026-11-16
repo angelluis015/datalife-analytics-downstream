@@ -53,6 +53,7 @@ datalife-baseline --input tests/fixtures --prefix synthetic_v0_1_0_ \
 ```
 
 The fixture is small on purpose; use a generated cohort for less noisy metrics.
+
 ## Comparing baseline reports for reproducibility
 
 Use `datalife-baseline-diff` to compare two baseline study `metrics.json` reports and detect reproducibility drift.
@@ -125,6 +126,7 @@ Each check reports `PASS`, `FAIL`, or `MISSING`, and the overall status is `PASS
 Diagnostics intentionally avoid printing report payloads, feature values, row values, or subject identifiers.
 
 **Research limitation:** This tool is a research reproducibility guard, not a clinical performance gate. Passing comparisons do not establish clinical safety, effectiveness, fairness, or suitability for deployment.
+
 ## Adding a model without breaking the contract
 
 1. Keep contract `0.1.0` unless the field set actually changes.
