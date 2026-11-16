@@ -53,7 +53,78 @@ datalife-baseline --input tests/fixtures --prefix synthetic_v0_1_0_ \
 ```
 
 The fixture is small on purpose; use a generated cohort for less noisy metrics.
+## Comparing baseline reports for reproducibility
 
+Use `datalife-baseline-diff` to compare two baseline study `metrics.json` reports and detect reproducibility drift.
+
+The comparison checks numerical metrics against explicit absolute tolerances and verifies that the following lineage fields match exactly:
+
+- `contract`
+- `contract_version`
+- `generator_seed`
+
+### Configure tolerances
+
+Create a JSON tolerance map:
+
+```json
+{
+  "accuracy": 0.02,
+  "brier": 0.01,
+  "roc_auc": 0.03
+}
+```
+
+These values are illustrative research tolerances, not clinical performance thresholds. Each numerical metric passes when the absolute difference between the baseline and current value is less than or equal to its configured tolerance.
+
+### Run the comparison
+
+```bash
+datalife-baseline-diff \
+  --baseline reports/generated/metrics.json \
+  --current reports/current/metrics.json \
+  --tolerances tolerances.json
+```
+
+For a machine-readable summary suitable for CI:
+
+```bash
+datalife-baseline-diff \
+  --baseline reports/generated/metrics.json \
+  --current reports/current/metrics.json \
+  --tolerances tolerances.json \
+  --json
+```
+
+Example JSON output for a passing comparison:
+
+```json
+{
+  "status": "PASS",
+  "checks": {
+    "accuracy": "PASS",
+    "brier": "PASS",
+    "roc_auc": "PASS",
+    "contract": "PASS",
+    "contract_version": "PASS",
+    "generator_seed": "PASS"
+  }
+}
+```
+
+Each check reports `PASS`, `FAIL`, or `MISSING`, and the overall status is `PASS` only when every required comparison passes.
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | All comparisons pass |
+| `1` | Reproducibility drift or a required metric is missing |
+| `2` | Invalid, malformed, or unreadable comparison input |
+
+Diagnostics intentionally avoid printing report payloads, feature values, row values, or subject identifiers.
+
+**Research limitation:** This tool is a research reproducibility guard, not a clinical performance gate. Passing comparisons do not establish clinical safety, effectiveness, fairness, or suitability for deployment.
 ## Adding a model without breaking the contract
 
 1. Keep contract `0.1.0` unless the field set actually changes.
