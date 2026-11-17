@@ -1,5 +1,6 @@
 import argparse
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -28,18 +29,46 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def reject_json_constant(value: str) -> None:
+    raise ValueError(f"Invalid JSON constant: {value}")
+
+
+def validate_json_numbers(value: object) -> None:
+    if isinstance(value, dict):
+        for item in value.values():
+            validate_json_numbers(item)
+
+    elif isinstance(value, list):
+        for item in value:
+            validate_json_numbers(item)
+
+    elif isinstance(value, float):
+        if not math.isfinite(value):
+            raise ValueError("Non-finite JSON number")
+
+    elif isinstance(value, int) and not isinstance(value, bool):
+        try:
+            float(value)
+        except OverflowError as exc:
+            raise ValueError("JSON integer is too large") from exc
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
 
     try:
         with args.baseline.open(encoding="utf-8") as file:
-            baseline_report = json.load(file)
+            baseline_report = json.load(file, parse_constant=reject_json_constant)
 
         with args.current.open(encoding="utf-8") as file:
-            current_report = json.load(file)
+            current_report = json.load(file, parse_constant=reject_json_constant)
 
         with args.tolerances.open(encoding="utf-8") as file:
-            tolerances = json.load(file)
+            tolerances = json.load(file, parse_constant=reject_json_constant)
+
+        validate_json_numbers(baseline_report)
+        validate_json_numbers(current_report)
+        validate_json_numbers(tolerances)
 
         if not isinstance(baseline_report, dict):
             raise ValueError("Invalid baseline report")
