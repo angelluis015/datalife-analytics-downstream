@@ -42,11 +42,14 @@ def validate_json_numbers(value: object) -> None:
         for item in value:
             validate_json_numbers(item)
 
+    elif isinstance(value, bool):
+        raise ValueError("Boolean JSON values are not allowed")
+
     elif isinstance(value, float):
         if not math.isfinite(value):
             raise ValueError("Non-finite JSON number")
 
-    elif isinstance(value, int) and not isinstance(value, bool):
+    elif isinstance(value, int):
         try:
             float(value)
         except OverflowError as exc:
@@ -98,6 +101,9 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Overall: {summary['status']}")
         for name, status in summary["checks"].items():
             print(f"{name}: {status}")
+
+    if any(status == "MISSING" for status in summary["checks"].values()):
+        return 2
 
     return 0 if summary["status"] == "PASS" else 1
 

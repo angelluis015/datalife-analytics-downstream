@@ -326,3 +326,96 @@ def test_oversized_integer_direct_comparison_rejected():
 
     with pytest.raises(ValueError):
         compare_reports(baseline, current, {"accuracy": 0.02})
+
+
+def test_boolean_in_unconfigured_field_cli_rejected(tmp_path):
+    baseline = make_report()
+    current = make_report()
+
+    current["extra"] = {"nested": [1, {"flag": True}]}
+
+    baseline_path = tmp_path / "baseline.json"
+    current_path = tmp_path / "current.json"
+    tolerances_path = tmp_path / "tolerances.json"
+
+    baseline_path.write_text(json.dumps(baseline), encoding="utf-8")
+    current_path.write_text(json.dumps(current), encoding="utf-8")
+    tolerances_path.write_text(
+        json.dumps({"accuracy": 0.02}),
+        encoding="utf-8",
+    )
+
+    exit_code = main(
+        [
+            "--baseline",
+            str(baseline_path),
+            "--current",
+            str(current_path),
+            "--tolerances",
+            str(tolerances_path),
+        ]
+    )
+
+    assert exit_code == 2
+
+
+def test_missing_required_metric_cli_returns_two(tmp_path):
+    baseline = make_report()
+    current = make_report()
+
+    del current["models"]["ridge_logistic"]["test"]["accuracy"]
+
+    baseline_path = tmp_path / "baseline.json"
+    current_path = tmp_path / "current.json"
+    tolerances_path = tmp_path / "tolerances.json"
+
+    baseline_path.write_text(json.dumps(baseline), encoding="utf-8")
+    current_path.write_text(json.dumps(current), encoding="utf-8")
+    tolerances_path.write_text(
+        json.dumps({"accuracy": 0.02}),
+        encoding="utf-8",
+    )
+
+    exit_code = main(
+        [
+            "--baseline",
+            str(baseline_path),
+            "--current",
+            str(current_path),
+            "--tolerances",
+            str(tolerances_path),
+        ]
+    )
+
+    assert exit_code == 2
+
+
+def test_metric_drift_cli_returns_one(tmp_path):
+    baseline = make_report()
+    current = make_report()
+
+    current["models"]["ridge_logistic"]["test"]["accuracy"] = 0.50
+
+    baseline_path = tmp_path / "baseline.json"
+    current_path = tmp_path / "current.json"
+    tolerances_path = tmp_path / "tolerances.json"
+
+    baseline_path.write_text(json.dumps(baseline), encoding="utf-8")
+    current_path.write_text(json.dumps(current), encoding="utf-8")
+    tolerances_path.write_text(
+        json.dumps({"accuracy": 0.02}),
+        encoding="utf-8",
+    )
+
+    exit_code = main(
+        [
+            "--baseline",
+            str(baseline_path),
+            "--current",
+            str(current_path),
+            "--tolerances",
+            str(tolerances_path),
+        ]
+    )
+
+    assert exit_code == 1

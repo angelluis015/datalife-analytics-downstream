@@ -102,6 +102,11 @@ These values are illustrative research tolerances, not clinical performance thre
 
 ### Run the comparison
 
+The supported CLI entry point is `datalife-baseline-diff`, installed through
+the package's console scripts. The `python -m datalife_analytics` entry point
+is reserved for fixture generation and validation; it does not support
+the `baseline-diff` subcommand.
+
 ```bash
 datalife-baseline-diff \
   --baseline reports/generated/metrics.json \
@@ -128,9 +133,17 @@ Example JSON output for a passing comparison:
     "accuracy": "PASS",
     "brier": "PASS",
     "roc_auc": "PASS",
-    "contract": "PASS",
-    "contract_version": "PASS",
-    "generator_seed": "PASS"
+    "lineage.contract": "PASS",
+    "lineage.contract_version": "PASS",
+    "lineage.generator_seed": "PASS",
+    "lineage.split_seed": "PASS",
+    "lineage.train_fraction": "PASS",
+    "lineage.n_subjects": "PASS",
+    "split.n_train": "PASS",
+    "split.n_test": "PASS",
+    "split.train_subjects": "PASS",
+    "split.test_subjects": "PASS",
+    "test.n": "PASS"
   }
 }
 ```
@@ -142,8 +155,8 @@ Each check reports `PASS`, `FAIL`, or `MISSING`, and the overall status is `PASS
 | Code | Meaning |
 |---|---|
 | `0` | All comparisons pass |
-| `1` | Reproducibility drift or a required metric is missing |
-| `2` | Invalid, malformed, or unreadable comparison input |
+| `1` | Metric, lineage, or sample-count drift |
+| `2` | Missing required fields, invalid schema, malformed or unreadable input |
 
 Diagnostics intentionally avoid printing report payloads, feature values, row values, or subject identifiers.
 
