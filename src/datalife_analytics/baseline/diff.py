@@ -1,6 +1,63 @@
 import math
 
 
+def validate_structural_fields(report: dict, mode: str) -> None:
+    """Reject incorrectly typed required report metadata."""
+    lineage = report["lineage"]
+    split = report["split"]
+    test = report["models"]["ridge_logistic"]["test"]
+
+    def require_int(section: dict, field: str) -> None:
+        value = section.get(field)
+        if type(value) is not int:
+            raise ValueError(f"Invalid integer field: {field}")
+
+    def require_string(section: dict, field: str) -> None:
+        value = section.get(field)
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"Invalid string field: {field}")
+
+    def require_fraction(section: dict, field: str) -> None:
+        value = section.get(field)
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(value)
+            or not 0 < value < 1
+        ):
+            raise ValueError(f"Invalid fraction field: {field}")
+
+    for field in ("contract", "contract_version"):
+        require_string(lineage, field)
+
+    for field in ("generator_seed", "split_seed", "n_subjects"):
+        require_int(lineage, field)
+
+    require_int(test, "n")
+
+    if mode == "single":
+        require_fraction(lineage, "train_fraction")
+
+        for field in (
+            "n_train",
+            "n_test",
+            "train_subjects",
+            "test_subjects",
+        ):
+            require_int(split, field)
+
+    else:
+        require_string(split, "mode")
+
+        for field in ("n_splits", "n_examples"):
+            require_int(split, field)
+
+        require_int(lineage, "n_splits")
+
+        if lineage.get("train_fraction") is not None:
+            raise ValueError("Invalid K-fold train_fraction")
+
+
 def compare_metric(
     baseline_metric: float,
     current_metric: float,
@@ -108,6 +165,9 @@ def compare_reports(baseline_report: dict, current_report: dict, tolerances: dic
 
     if baseline_mode != current_mode:
         raise ValueError("Cannot compare different split modes")
+
+    validate_structural_fields(baseline_report, baseline_mode)
+    validate_structural_fields(current_report, current_mode)
 
     overall_result = "PASS"
     checks = {}
