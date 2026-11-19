@@ -7,10 +7,19 @@ def validate_structural_fields(report: dict, mode: str) -> None:
     split = report["split"]
     test = report["models"]["ridge_logistic"]["test"]
 
-    def require_int(section: dict, field: str) -> None:
+    def require_int(
+        section: dict,
+        field: str,
+        minimum: int,
+        maximum: int,
+    ) -> None:
         value = section.get(field)
+
         if type(value) is not int:
             raise ValueError(f"Invalid integer field: {field}")
+
+        if not minimum <= value <= maximum:
+            raise ValueError(f"Out-of-range integer field: {field}")
 
     def require_string(section: dict, field: str) -> None:
         value = section.get(field)
@@ -30,10 +39,11 @@ def validate_structural_fields(report: dict, mode: str) -> None:
     for field in ("contract", "contract_version"):
         require_string(lineage, field)
 
-    for field in ("generator_seed", "split_seed", "n_subjects"):
-        require_int(lineage, field)
+    for field in ("generator_seed", "split_seed"):
+        require_int(lineage, field, 0, 2**63 - 1)
 
-    require_int(test, "n")
+    require_int(lineage, "n_subjects", 1, 10_000_000)
+    require_int(test, "n", 1, 10_000_000)
 
     if mode == "single":
         require_fraction(lineage, "train_fraction")
@@ -44,15 +54,14 @@ def validate_structural_fields(report: dict, mode: str) -> None:
             "train_subjects",
             "test_subjects",
         ):
-            require_int(split, field)
+            require_int(split, field, 1, 10_000_000)
 
     else:
         require_string(split, "mode")
 
-        for field in ("n_splits", "n_examples"):
-            require_int(split, field)
-
-        require_int(lineage, "n_splits")
+        require_int(split, "n_splits", 2, 100)
+        require_int(split, "n_examples", 1, 10_000_000)
+        require_int(lineage, "n_splits", 2, 100)
 
         if lineage.get("train_fraction") is not None:
             raise ValueError("Invalid K-fold train_fraction")

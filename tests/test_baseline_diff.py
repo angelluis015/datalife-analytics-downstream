@@ -495,3 +495,69 @@ def test_kfold_wrong_typed_split_field_rejected(field):
 
     with pytest.raises(ValueError):
         compare_reports(baseline, current, {"accuracy": 0.02})
+
+
+@pytest.mark.parametrize(
+    ("section", "field", "bad_value"),
+    [
+        ("test", "n", 0),
+        ("test", "n", -1),
+        ("test", "n", 10**300),
+        ("split", "n_train", 0),
+        ("split", "n_train", -1),
+        ("split", "n_train", 10**300),
+        ("lineage", "split_seed", -1),
+        ("lineage", "split_seed", 2**63),
+    ],
+)
+def test_out_of_range_structural_field_cli_returns_two(tmp_path, section, field, bad_value):
+    baseline = make_report()
+    current = make_report()
+
+    for report in (baseline, current):
+        if section == "test":
+            report["models"]["ridge_logistic"]["test"][field] = bad_value
+        else:
+            report[section][field] = bad_value
+
+    baseline_path = tmp_path / "baseline.json"
+    current_path = tmp_path / "current.json"
+    tolerances_path = tmp_path / "tolerances.json"
+
+    baseline_path.write_text(json.dumps(baseline), encoding="utf-8")
+    current_path.write_text(json.dumps(current), encoding="utf-8")
+    tolerances_path.write_text(
+        json.dumps({"accuracy": 0.02}),
+        encoding="utf-8",
+    )
+
+    exit_code = main(
+        [
+            "--baseline",
+            str(baseline_path),
+            "--current",
+            str(current_path),
+            "--tolerances",
+            str(tolerances_path),
+        ]
+    )
+
+    assert exit_code == 2
+
+
+@pytest.mark.parametrize("bad_value", [0, 1, 101, 10**300])
+def test_kfold_split_count_out_of_range_rejected(bad_value):
+    baseline = make_report()
+    current = make_report()
+
+    for report in (baseline, current):
+        report["split"] = {
+            "mode": "subject_stratified_kfold",
+            "n_splits": bad_value,
+            "n_examples": 100,
+        }
+        report["lineage"]["n_splits"] = bad_value
+        report["lineage"]["train_fraction"] = None
+
+    with pytest.raises(ValueError):
+        compare_reports(baseline, current, {"accuracy": 0.02})
